@@ -1,0 +1,80 @@
+# ============================================
+# Silent Link - Git Ignore
+# ============================================
+
+# --- Environment ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# --- Virtual Environment ---
+venv/
+env/
+.venv/
+
+# --- ML Model Weights (large files) ---
+*.h5
+*.tflite
+*.pb
+*.ckpt
+*.pth
+
+# --- Training Data (large) ---
+MP_Data/
+Logs/
+
+# --- ISL Assets (keep folders, ignore contents) ---
+ISL_Gifs/*
+!ISL_Gifs/.gitkeep
+letters/*
+!letters/.gitkeep
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Node / React Native ---
+node_modules/
+.expo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Android ---
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+local.properties
+
+# --- iOS ---
+ios/Pods/
+ios/build/
+*.xcworkspace
+*.xcuserdata
+
+# --- Misc ---
+*.log
+*.tmp
+*.bak
+.git/
