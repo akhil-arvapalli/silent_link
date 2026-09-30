@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "glosses.schema.json",
+  "title": "Canonical ISL Gloss Vocabulary",
+  "type": "object",
+  "required": ["language", "version", "finger_spelling", "glosses", "training_contract"],
+  "properties": {
+    "language": {"type": "string"},
+    "version": {"type": "string"},
+    "note": {"type": "string"},
+    "finger_spelling": {
+      "type": "object",
+      "required": ["letters", "model"],
+      "properties": {
+        "letters": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 1}},
+        "model": {"type": "string"}
+      }
+    },
+    "glosses": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["words", "type"],
+        "properties": {
+          "words": {"type": "array", "items": {"type": "string"}},
+          "type": {"enum": ["word", "phrase", "sentence"]}
+        }
+      }
+    },
+    "training_contract": {
+      "type": "object",
+      "required": ["input_shape", "sequence_length_frames"],
+      "properties": {
+        "sequences_per_gloss": {"type": "integer"},
+        "sequence_length_frames": {"type": "integer"},
+        "hand_channels": {"type": "integer"},
+        "hand_landmarks_per_hand": {"type": "integer"},
+        "hands": {"type": "integer"},
+        "input_shape": {"type": "array", "items": {"type": "integer"}},
+        "normalization": {"type": "string"}
+      }
+    }
+  }
+}

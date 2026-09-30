@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Silent Link",
+    "slug": "silent-link",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "silentlink",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.silentlink.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Silent Link uses the camera to recognize Indian Sign Language gestures."
+      }
+    },
+    "android": {
+      "package": "com.silentlink.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.CAMERA"]
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Silent Link needs camera access to recognize Indian Sign Language gestures.",
+          "enableMicrophonePermission": false
+        }
+      ],
+      [
+        "./node_modules/expo-vision-camera-v4-mediapipe/plugin/index.js",
+        {
+          "numHands": 2,
+          "minDetectionConfidence": 0.5,
+          "minPresenceConfidence": 0.5,
+          "minTrackingConfidence": 0.5
+        }
+      ],
+      "onnxruntime-react-native"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

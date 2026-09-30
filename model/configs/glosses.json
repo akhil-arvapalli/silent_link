@@ -1,0 +1,32 @@
+{
+  "$schema": "./glosses.schema.json",
+  "language": "ISL",
+  "version": "1.0.0",
+  "note": "Canonical ISL vocabulary. Single source of truth for all apps/models. Do not hardcode vocab in code; read from this file.",
+  "finger_spelling": {
+    "letters": ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"],
+    "model": "per-frame_hand_shape_classifier"
+  },
+  "glosses": {
+    "hello": {"words": ["hello"], "type": "phrase"},
+    "thanks": {"words": ["thank", "thanks", "thank you"], "type": "phrase"},
+    "iloveyou": {"words": ["i love you"], "type": "phrase"},
+    "please": {"words": ["please"], "type": "phrase"},
+    "help": {"words": ["help"], "type": "phrase"},
+    "yes": {"words": ["yes"], "type": "phrase"},
+    "no": {"words": ["no"], "type": "phrase"},
+    "sorry": {"words": ["sorry"], "type": "phrase"},
+    "good_morning": {"words": ["good morning"], "type": "phrase"},
+    "good_night": {"words": ["good night"], "type": "phrase"},
+    "whats_your_name": {"words": ["what is your name", "whats your name"], "type": "sentence"}
+  },
+  "training_contract": {
+    "sequences_per_gloss": 100,
+    "sequence_length_frames": 40,
+    "hand_channels": 3,
+    "hand_landmarks_per_hand": 21,
+    "hands": 2,
+    "input_shape": [40, 42, 3],
+    "normalization": "hand-relative normalized coordinates"
+  }
+}

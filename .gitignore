@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Env / secrets
+.env
+.env.local
+
+# Data / models / artifacts (large binaries)
+data/raw/*
+data/processed/*
+model/registry/*
+*.h5
+*.tflite
+*.onnx
+*.pt
+Logs/
+
+# ML tracking
+.mlflow/
+wandb/
+.dvc/
+
+# Node / RN (Phase 1+)
+node_modules/
+**/node_modules/
+app/.expo/
+app/dist/
+app/.metro/
+app/android/.gradle/
+app/android/build/
+app/android/app/build/
+app/ios/Pods/
+app/ios/build/
+
+# Local build and tooling state
+.downloadIntermediates/
+.temp/
+.pytest_cache/
+.ruff_cache/
+*.log
+
+# Local Android SDK and emulator installations
+emulator/
+system-images/
+platform-tools/
+platforms/
+build-tools/
+sources/
+skins/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
