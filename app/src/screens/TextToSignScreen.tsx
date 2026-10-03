@@ -15,7 +15,7 @@ import { GLOSSES, glossLabel, glossWords } from '../config/glosses';
 import { createMotionLibrary } from '../synthesis/motion';
 import { GlossNormalizer } from '../synthesis/normalize';
 import { stitchGlosses } from '../synthesis/stitch';
-import { colors, radius, spacing, type } from '../theme';
+import { colors, radius, spacing, type, TOP_BAR_HEIGHT } from '../theme';
 
 const library = createMotionLibrary();
 const normalizer = new GlossNormalizer(
@@ -110,7 +110,7 @@ export default function TextToSignScreen({ connected, onOpenLogin }: Props) {
               totalFrames={totalFrames}
               width={300}
               height={280}
-              scale={62}
+              scale={100}
             />
             <Text style={styles.hint}>Signed by the on-device skeleton</Text>
           </View>
@@ -131,7 +131,7 @@ export default function TextToSignScreen({ connected, onOpenLogin }: Props) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bgTop },
-  content: { padding: spacing.lg, paddingBottom: 48 },
+  content: { padding: spacing.lg, paddingTop: TOP_BAR_HEIGHT + spacing.md, paddingBottom: 48 },
   card: { marginTop: spacing.xl, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md },
   input: {
     borderWidth: 0,

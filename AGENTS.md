@@ -47,6 +47,7 @@ See `docs/ARCHITECTURE.md` (to be written) and `docs/ADR.md` for decisions.
 
 - Lint: `ruff check .` (Python) — run in `backend/` and `model/`
 - Tests: `pytest` — run in `backend/` and `model/` (model uses `pythonpath=src`)
+- CI: `.github/workflows/ci.yml` — ruff + pytest for both packages, plus `tsc --noEmit` for `app/`. Nothing runs these locally by default, so push or run them before claiming green.
 - Data capture: `python scripts/capture_data.py [--gloss hello] [--per-gloss 100]`
 - Synthetic smoke data (no webcam): `python scripts/make_synthetic_data.py [--per-gloss 40]`
 - Train: `python scripts/train_model.py [--model stgcn|baseline] [--epochs 100] [--batch-size 32] [--out model/runs/<name>]`
@@ -78,9 +79,10 @@ MediaPipe note: mediapipe 1.0.1 dropped `mp.solutions`; use `mediapipe.tasks.pyt
 
 ## Phase 2 — Text→Sign Synthesis (core built, real-motion pending)
 
-- Canonical logic in `model/src/synthesis/` (Python, unit-tested): `normalize.py` (sentence→gloss), `motion.py` (per-gloss `(T,42,3)` motion library), `stitch.py` (concatenative + coarticulation crossfade), `export.py` (→ bundled JSON).
+- Canonical logic in `model/src/synthesis/` (Python, unit-tested): `normalize.py` (sentence→gloss), `handmodel.py` (forward-kinematic MediaPipe hand), `choreography.py` (keyframed ISL per gloss), `motion.py` (per-gloss `(T,42,3)` motion library), `stitch.py` (concatenative + coarticulation crossfade), `export.py` (→ bundled JSON).
 - On-device TS mirrors in `app/src/synthesis/` (`normalize.ts`, `motion.ts`, `stitch.ts`); renderer is `app/src/components/SkeletonAvatar.tsx` (react-native-skia) with topology in `app/src/model/bones.ts` (mirrors ST-GCN `_HAND_EDGES`).
-- Motion templates are currently **synthetic** (ADR-007). Replace with real captured landmark motion before production.
+- Motion templates are **authored, not captured** (ADR-007, ADR-008). `HandPose` drives 21 joints by forward kinematics; `CHOREOGRAPHY` holds one keyframed performance per gloss. Templates are divided by `handmodel.REST_REACH` so an open hand is 1.0 wrist-to-middle-tip — this deliberately keeps wrist translation, which the classifier's own wrist-relative normalization would erase. Replace with real captured landmark motion before production.
+- `TextToSignScreen` renders at `scale={100}` in a 300×280 stage; `test_library_fits_the_render_canvas` pins the authored extent to ≤1.4 units so it cannot outgrow the canvas.
 - `scripts/sync_app_assets.py` regenerates `app/src/synthesis/motionLibrary.json`.
 
 ## Backend (FastAPI — core built, in-memory persistence)
@@ -107,19 +109,54 @@ backend/        FastAPI service — Phase 1+ (core built, in-memory persistence)
   silentlink/   main.py (create_app factory), config.py, db.py, security.py, deps.py, schemas.py
     routers/    auth.py, datasets.py, jobs.py, models.py, synthesis.py
     services/   datasets.py, training.py (job runner), synthesis.py (reuses model/src/synthesis)
-  tests/        conftest.py, test_security.py, test_auth.py, test_api.py
+  tests/        conftest.py, test_security.py, test_auth.py, test_api.py, test_jobs.py
 model/          PyTorch training, configs, datasets — Phase 1+
   src/          model source
     data/       normalize, augment, dataset, loader (split/DataLoader)
     models/     baseline (Conv1D+BiLSTM), stgcn, training (early stop), export (ONNX)
-    synthesis/  normalize (sentence→gloss), motion (library), stitch (coarticulation), export (→ JSON)
+    synthesis/  normalize (sentence→gloss), handmodel (FK hand), choreography (authored ISL), motion (library), stitch (coarticulation), export (→ JSON)
   configs/      glosses.json, training configs
   datasets/     dataset loaders
   runs/         training outputs (best_model.pt, metrics.json, model.onnx)
+  tests/        test_data_pipeline.py, test_models.py, test_synthesis.py, test_handmodel.py,
+                test_ts_parity.py, test_app_contract.py, test_config.py
 data/           raw/ + processed/ (keypoints, WebDataset shards)
 docs/           ADR.md, ARCHITECTURE.md, etc.
 scripts/        one-off / automation scripts
 ```
+
+## The app is not type-checked locally — two test suites stand in for it
+
+`app/node_modules` is absent, so `npx tsc --noEmit` cannot run here. Two
+suites in `model/tests/` cover the app's Python contract from the Python side,
+and both need no npm install:
+
+- **`test_ts_parity.py`** stages the *real* `app/src/**.ts` mirrors into a temp
+  dir and executes them under Node (>= 22.6, native type stripping), then
+  compares the results against the Python originals numerically. This is what
+  stops the mirrors drifting again — the `normalize.ts` wrist-distance bug was
+  invisible to every other check. Skips cleanly if `node` is absent, so CI
+  installs Node to keep it live. `test_the_guard_detects_injected_drift` is a
+  negative control: it reinstates the original bug and requires parity to fail,
+  so the guard cannot go vacuous.
+- **`test_app_contract.py`** reads the shipped `model.onnx` with onnxruntime
+  and asserts `classifier.ts`'s tensor names, window length and `V`/`C`, plus
+  `bones.ts` vs `stgcn._HAND_EDGES`, the byte-identity of the app's
+  `glosses.json`, and that `motionLibrary.json` still matches a rebuild.
+
+When you change any of `app/src/model/*`, `app/src/synthesis/*` or the
+choreography, run `pytest` in `model/`. Both suites fail loudly on drift.
+
+## Verified state
+
+- `model`: 64 tests, `backend`: 22 tests, `ruff check .` clean in both.
+- The ONNX graph, the app's tensor contract and the gloss vocabulary agree
+  (checked against the real artifact, not against the source comments).
+- **Still unverified without a device:** the app renders, the camera frame
+  processor and MediaPipe plugin run, and the native Android build succeeds.
+  `app/patches/onnxruntime-react-native+1.24.3.patch` is still inert (no
+  `patch-package`, no `postinstall`), so a fresh `npm ci` + Gradle build will
+  hit the unpatched `VersionNumber.parse(REACT_NATIVE_VERSION)` reference.
 
 ## Progress & State
 

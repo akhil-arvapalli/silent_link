@@ -5,20 +5,15 @@ import {
   useCameraDevice,
   useCameraPermission,
   useFrameProcessor,
-  type Frame,
 } from 'react-native-vision-camera';
 import { Worklets } from 'react-native-worklets-core';
 
 import { GLOSSES } from '../config/glosses';
 import { useGestureRecognizer, type HandDetectionResult } from '../hooks/useGestureRecognizer';
-import { colors, radius, spacing, type } from '../theme';
-
-declare global {
-  function detectHandLandmarks(frame: Frame): HandDetectionResult | null;
-}
+import { SEQUENCE_LENGTH } from '../model/classifier';
+import { colors, radius, type, TOP_BAR_HEIGHT } from '../theme';
 
 export default function GestureScreen() {
-  const device = useCameraDevice('front');
   const { hasPermission, requestPermission } = useCameraPermission();
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const activeDevice = useCameraDevice(facing);
@@ -79,11 +74,13 @@ export default function GestureScreen() {
       <View style={styles.overlay}>
         <Text style={styles.title}>Silent Link</Text>
         <Text style={styles.counter}>
-          {progress}/{40}
+          {progress}/{SEQUENCE_LENGTH}
         </Text>
 
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${(progress / 40) * 100}%` }]} />
+          <View
+            style={[styles.progressFill, { width: `${(progress / SEQUENCE_LENGTH) * 100}%` }]}
+          />
         </View>
 
         {result ? (
@@ -120,7 +117,7 @@ export default function GestureScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTop, padding: 24 },
-  overlay: { flex: 1, padding: 24, justifyContent: 'space-between' },
+  overlay: { flex: 1, padding: 24, paddingTop: TOP_BAR_HEIGHT, justifyContent: 'space-between' },
   title: { color: '#fff', fontSize: 28, fontWeight: '800', textAlign: 'center' },
   centerTitle: { ...type.title, textAlign: 'center' },
   counter: { color: '#fff', fontSize: 18, textAlign: 'center', marginTop: 8 },

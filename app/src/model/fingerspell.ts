@@ -27,6 +27,9 @@ const FINGER_CHAINS: Array<[number, number, number]> = [
   [17, 18, 20], // pinky
 ];
 
+// 1 thumb curl + 4 finger curls + 4 spreads.
+const FEATURE_COUNT = 9;
+
 interface Vec3 {
   x: number;
   y: number;
@@ -59,7 +62,10 @@ function jointCos(a: Vec3, b: Vec3, c: Vec3): number {
  * 1 = curled) + spread (thumb vs each finger tip). Returns a flat number[].
  */
 export function handFeatures(hand: Hand | undefined): number[] {
-  if (!hand || hand.length < NUM_LANDMARKS) return Array(8).fill(0);
+  // Must be 9 long (thumb + 4 curls + 4 spreads): distance() iterates over the
+  // input's length, so a short vector silently skips the trailing feature and
+  // compares against mis-aligned templates.
+  if (!hand || hand.length < NUM_LANDMARKS) return Array(FEATURE_COUNT).fill(0);
   const lm = (i: number): Vec3 => hand[i] as Vec3;
 
   const curl = FINGER_CHAINS.map(([base, mid, tip]) => {

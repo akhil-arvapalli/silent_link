@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { runOnJS, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 
 import { HAND_EDGES, jointPoint } from '../model/bones';
+import { NUM_LANDMARKS } from '../model/normalize';
 import { colors } from '../theme';
 
 interface Props {
@@ -32,7 +33,7 @@ function buildPath(
 ): SkPath {
   const path = Skia.Path.Make();
   for (let hand = 0; hand < 2; hand++) {
-    const offset = hand * 21;
+    const offset = hand * NUM_LANDMARKS;
     for (const [a, b] of HAND_EDGES) {
       const p1 = jointPoint(data, frame, offset + a, width, height, scale);
       const p2 = jointPoint(data, frame, offset + b, width, height, scale);

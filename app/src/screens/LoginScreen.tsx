@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { ApiError, api, setToken } from '../api/client';
-import { colors, radius, spacing, type } from '../theme';
+import { colors, radius, spacing, type, TOP_BAR_HEIGHT } from '../theme';
 
 interface Props {
   onAuthenticated: () => void;
@@ -79,7 +79,13 @@ export default function LoginScreen({ onAuthenticated }: Props) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bgTop, justifyContent: 'center', padding: spacing.lg },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.bgTop,
+    justifyContent: 'center',
+    padding: spacing.lg,
+    paddingTop: TOP_BAR_HEIGHT + spacing.md,
+  },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg },
   input: {
     marginTop: spacing.md,

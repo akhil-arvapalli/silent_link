@@ -1,9 +1,15 @@
 import { Asset } from 'expo-asset';
 import * as ort from 'onnxruntime-react-native';
 
-const SEQUENCE_LENGTH = 40;
-const V = 42;
-const C = 3;
+import { C, V } from './normalize';
+
+/** Frames per inference window. Fixed by the exported graph's input shape. */
+export const SEQUENCE_LENGTH = 40;
+
+/** Tensor name the exported graph declares for its input. */
+const INPUT_NAME = 'landmarks';
+/** Tensor name the exported graph declares for its output. */
+const OUTPUT_NAME = 'logits';
 
 let sessionPromise: Promise<ort.InferenceSession> | null = null;
 
@@ -14,7 +20,14 @@ async function getSession(): Promise<ort.InferenceSession> {
       await asset.downloadAsync();
       const uri = asset.localUri ?? asset.uri;
       return ort.InferenceSession.create(uri, { executionProviders: ['cpu'] });
-    })();
+    })().catch((err: unknown) => {
+      // A failed load must not be cached. The promise is assigned before it
+      // settles, so without this reset one transient failure (asset copy, ORT
+      // native lib load) leaves every later predict() rejecting instantly and
+      // gesture recognition dead for the rest of the session.
+      sessionPromise = null;
+      throw err;
+    });
   }
   return sessionPromise;
 }
@@ -30,13 +43,21 @@ export async function predict(sequence: Float32Array): Promise<number[]> {
   }
   const session = await getSession();
   const input = new ort.Tensor('float32', sequence, [1, SEQUENCE_LENGTH, V, C]);
-  const feeds: Record<string, ort.Tensor> = { landmarks: input };
-  const results = await session.run(feeds);
-  const logits = results.logits;
-  if (Array.isArray(logits)) {
-    return Array.from(logits);
+  try {
+    const results = await session.run({ [INPUT_NAME]: input });
+    const logits = results[OUTPUT_NAME];
+    // `results[OUTPUT_NAME]` is a single Tensor: onnxruntime-common types
+    // OnnxValueMapType values as OnnxValue = Tensor. No array case exists, and
+    // an Array.isArray branch here widened the result to `any[]`.
+    const values = Array.from(logits.data as Float32Array);
+    logits.dispose();
+    return values;
+  } finally {
+    // Releases the native tensor and its 5040-float buffer. Inference happens
+    // once per 40-frame window, so without this it accumulates for the life of
+    // the (never-released) module-level session.
+    input.dispose();
   }
-  return Array.from(logits.data as Float32Array);
 }
 
 export async function disposeSession(): Promise<void> {

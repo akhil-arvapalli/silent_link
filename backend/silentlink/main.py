@@ -6,15 +6,20 @@ fresh in-memory DB, while the default entrypoint runs the real service.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
 
 from .db import MemoryDB
 from .routers import auth, datasets, jobs, models, synthesis
 
 
-def create_app(db: MemoryDB | None = None) -> FastAPI:
+def create_app(
+    db: MemoryDB | None = None, processed_root: Path | None = None
+) -> FastAPI:
     app = FastAPI(title="Silent Link Backend", version="0.1.0")
     app.state.db = db or MemoryDB()
+    app.state.processed_root = processed_root
     app.include_router(auth.router)
     app.include_router(datasets.router)
     app.include_router(jobs.router)

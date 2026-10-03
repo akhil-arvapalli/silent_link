@@ -8,7 +8,7 @@ import GestureScreen from './src/screens/GestureScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import TextToSignScreen from './src/screens/TextToSignScreen';
-import { colors, spacing } from './src/theme';
+import { colors, spacing, TOP_BAR_HEIGHT } from './src/theme';
 
 type Route = 'home' | 'gesture' | 'text' | 'spell' | 'login';
 
@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    minHeight: TOP_BAR_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,

@@ -1,12 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
+import type { Frame } from 'react-native-vision-camera';
 
 import { topGloss } from '../config/glosses';
-import { normalizeFrame, packHands, type Hand, type Landmark } from '../model/normalize';
 import * as classifier from '../model/classifier';
-
-const SEQUENCE_LENGTH = 40;
-const V = 42;
-const C = 3;
+import { SEQUENCE_LENGTH } from '../model/classifier';
+import { C, V, normalizeFrame, packHands, type Hand } from '../model/normalize';
 
 export interface HandednessCategory {
   categoryName: string;
@@ -17,9 +15,23 @@ export interface HandednessCategory {
 export interface HandDetectionResult {
   hands: Hand[];
   handedness?: HandednessCategory[][];
-  pose?: Landmark[];
-  face?: Landmark[];
+  imageWidth?: number;
+  imageHeight?: number;
+  delegates?: Record<string, string>;
   error?: string;
+}
+
+/**
+ * The frame processor installed by the native MediaPipe plugin.
+ *
+ * Declared once, here, next to the result type it returns. GestureScreen and
+ * FingerspellingScreen each used to declare it too, with different result
+ * types; `declare global` merges duplicate functions as overloads rather than
+ * erroring, so the effective type was decided by file ordering in the program
+ * instead of by the code.
+ */
+declare global {
+  function detectHandLandmarks(frame: Frame): HandDetectionResult | null;
 }
 
 export interface RecognitionResult {
@@ -47,6 +59,9 @@ function toLeftRight(result: HandDetectionResult): { left?: Hand; right?: Hand }
 export function useGestureRecognizer() {
   const bufferRef = useRef<Float32Array[]>([]);
   const busyRef = useRef(false);
+  // Bumped by reset(); an inference that started before the bump must not
+  // repopulate the result card the user just cleared.
+  const generationRef = useRef(0);
   const [result, setResult] = useState<RecognitionResult | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -63,27 +78,32 @@ export function useGestureRecognizer() {
     if (buffer.length > SEQUENCE_LENGTH) buffer.shift();
     setProgress(buffer.length);
 
-    if (buffer.length >= SEQUENCE_LENGTH && !busyRef.current) {
+    if (buffer.length >= SEQUENCE_LENGTH) {
       busyRef.current = true;
+      const generation = generationRef.current;
       const input = new Float32Array(SEQUENCE_LENGTH * V * C);
       buffer.forEach((f, i) => input.set(f, i * V * C));
       classifier
         .predict(input)
         .then((logits) => {
+          if (generationRef.current !== generation) return;
           setResult(topGloss(logits));
         })
         .catch((err) => {
           console.warn('classifier error', err);
         })
         .finally(() => {
+          if (generationRef.current === generation) {
+            bufferRef.current = [];
+            setProgress(0);
+          }
           busyRef.current = false;
-          bufferRef.current = [];
-          setProgress(0);
         });
     }
   }, []);
 
   const reset = useCallback(() => {
+    generationRef.current += 1;
     bufferRef.current = [];
     setProgress(0);
     setResult(null);

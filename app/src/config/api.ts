@@ -1,8 +1,9 @@
 /**
  * Backend API configuration.
  *
- * The backend base URL is set via app.json -> expo.extra.backendUrl. For a
- * local FastAPI server reachable from an emulator/device:
+ * The base URL comes from the EXPO_PUBLIC_BACKEND_URL environment variable,
+ * which Expo inlines at bundle time (see .env.example). For a local FastAPI
+ * server reachable from an emulator/device:
  *   - Android emulator:      http://10.0.2.2:8000
  *   - Physical phone (LAN):  http://<your-machine-ip>:8000
  */

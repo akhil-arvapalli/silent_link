@@ -17,16 +17,11 @@ import {
   useCameraDevice,
   useCameraPermission,
   useFrameProcessor,
-  type Frame,
 } from 'react-native-vision-camera';
 import { Worklets } from 'react-native-worklets-core';
 
 import { classifyLetter } from '../model/fingerspell';
-import { colors, radius, spacing, type } from '../theme';
-
-declare global {
-  function detectHandLandmarks(frame: Frame): { hands: import('../model/normalize').Hand[] } | null;
-}
+import { colors, radius, type, TOP_BAR_HEIGHT } from '../theme';
 
 const HOLD_FRAMES = 6;
 
@@ -139,7 +134,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTop, padding: 24 },
   centerTitle: { ...type.title, textAlign: 'center' },
   hint: { color: colors.teal, fontSize: 16, textAlign: 'center', marginBottom: 16 },
-  overlay: { flex: 1, padding: 24, justifyContent: 'space-between' },
+  overlay: { flex: 1, padding: 24, paddingTop: TOP_BAR_HEIGHT, justifyContent: 'space-between' },
   letterCard: {
     backgroundColor: colors.mint,
     borderRadius: radius.md,

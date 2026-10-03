@@ -14,9 +14,13 @@ export interface Landmark {
   z: number;
 }
 
-const NUM_LANDMARKS = 21;
-const V = 42;
-const C = 3;
+/** Landmarks per hand, MediaPipe topology. Must match data/normalize.py. */
+export const NUM_LANDMARKS = 21;
+
+/** Joints per frame: two hands x 21 landmarks. Must match data/normalize.py. */
+export const V = 42;
+/** x, y, z per joint. Must match data/normalize.py. */
+export const C = 3;
 
 export type Hand = Landmark[];
 
@@ -46,19 +50,25 @@ function normalizeHand(frame: Float32Array, offset: number): void {
   const wx = frame[offset];
   const wy = frame[offset + 1];
   const wz = frame[offset + 2];
+
+  const rel = new Float32Array(NUM_LANDMARKS * C);
+  for (let i = 0; i < NUM_LANDMARKS; i++) {
+    rel[i * C] = frame[offset + i * C] - wx;
+    rel[i * C + 1] = frame[offset + i * C + 1] - wy;
+    rel[i * C + 2] = frame[offset + i * C + 2] - wz;
+  }
+
   let boneSum = 0;
   for (let i = 1; i < NUM_LANDMARKS; i++) {
-    const px = frame[offset + i * C] - wx;
-    const py = frame[offset + i * C + 1] - wy;
-    const pz = frame[offset + i * C + 2] - wz;
-    boneSum += Math.sqrt(px * px + py * py + pz * pz);
+    const dx = rel[i * C] - rel[(i - 1) * C];
+    const dy = rel[i * C + 1] - rel[(i - 1) * C + 1];
+    const dz = rel[i * C + 2] - rel[(i - 1) * C + 2];
+    boneSum += Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
   const boneLen = boneSum / (NUM_LANDMARKS - 1);
   const scale = boneLen > 1e-6 ? boneLen : 1;
-  for (let i = 0; i < NUM_LANDMARKS; i++) {
-    frame[offset + i * C] = (frame[offset + i * C] - wx) / scale;
-    frame[offset + i * C + 1] = (frame[offset + i * C + 1] - wy) / scale;
-    frame[offset + i * C + 2] = (frame[offset + i * C + 2] - wz) / scale;
+  for (let i = 0; i < NUM_LANDMARKS * C; i++) {
+    frame[offset + i] = rel[i] / scale;
   }
 }
 

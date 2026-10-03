@@ -1,4 +1,4 @@
-"""Synthesis routes: enqueue and query text->sign synthesis jobs."""
+"""Synthesis routes: run text->sign synthesis and query past jobs."""
 
 from __future__ import annotations
 
@@ -12,16 +12,25 @@ from ..services.synthesis import synthesize
 router = APIRouter(prefix="/synthesis", tags=["synthesis"])
 
 
-@router.post("", response_model=SynthesisResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post("", response_model=SynthesisResponse)
 def create_synthesis(
     body: SynthesisCreate, db: deps.DbDep, user: deps.UserDep
 ) -> SynthesisResponse:
+    """Synthesize immediately and return the terminal record.
+
+    This used to advertise 202/``queued`` while running the work inline on the
+    request thread and returning ``succeeded``, so the status code, the status
+    field and the client contract all disagreed. The on-device path consumes
+    ``glosses`` straight off this response to cross-check its own synthesis, so
+    the work stays synchronous and the response is honestly 200. `GET
+    /synthesis/{job_id}` remains available for replaying a stored result.
+    """
     job = SynthesisJob(
         id=db.next_id("syn"),
         owner_id=user.id,
         text=body.text,
         glosses=[],
-        status="queued",
+        status="running",
     )
     db.synthesis[job.id] = job
     try:

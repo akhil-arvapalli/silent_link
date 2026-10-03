@@ -2,15 +2,63 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import secrets
 from typing import Annotated
 
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request, status
 
+from .config import REPO_ROOT
 from .db import MemoryDB, User
 from .security import verify_token
 
-SECRET = os.environ.get("SILENTLINK_SECRET", "dev-secret-change-me")
+log = logging.getLogger(__name__)
+
+load_dotenv(REPO_ROOT / ".env")
+
+# Where a generated key is cached so that every worker and every restart agrees.
+# `backend/.silentlink_secret` is gitignored.
+SECRET_FILE = REPO_ROOT / "backend" / ".silentlink_secret"
+
+
+def _resolve_secret() -> str:
+    """Return the token-signing key, preferring the environment.
+
+    Falling back to an in-memory random key silently breaks multi-worker
+    deployments: `uvicorn --workers N` imports this module once per worker, each
+    generating a *different* key, so a token minted by one worker fails
+    verification in the next and the client sees intermittent 401s. Persisting
+    the generated key fixes both that and "tokens die on every restart".
+    """
+    configured = os.environ.get("SILENTLINK_SECRET")
+    if configured:
+        return configured
+    try:
+        cached = SECRET_FILE.read_text(encoding="utf-8").strip()
+        if cached:
+            return cached
+    except OSError:
+        pass
+    generated = secrets.token_hex(32)
+    try:
+        SECRET_FILE.write_text(generated, encoding="utf-8")
+        log.warning(
+            "SILENTLINK_SECRET is unset; generated a key at %s. "
+            "Set SILENTLINK_SECRET in .env to control it.",
+            SECRET_FILE,
+        )
+    except OSError:
+        log.warning(
+            "SILENTLINK_SECRET is unset and %s is not writable; using an "
+            "ephemeral key. Tokens will break between workers and on restart.",
+            SECRET_FILE,
+        )
+    return generated
+
+
+SECRET = _resolve_secret()
 
 
 def get_db(request: Request) -> MemoryDB:

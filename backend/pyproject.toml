@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn[standard]",
     "pydantic>=2",
     "python-dotenv",
+    "numpy",
 ]
 
 [project.optional-dependencies]

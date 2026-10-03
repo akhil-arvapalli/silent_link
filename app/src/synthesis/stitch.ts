@@ -10,8 +10,9 @@ import { C, V, type MotionLibrary } from './motion';
 
 function raisedCosineBlend(window: number): Float32Array {
   const ramp = new Float32Array(window);
+  const denom = window > 1 ? window - 1 : 1;
   for (let i = 0; i < window; i++) {
-    ramp[i] = 0.5 - 0.5 * Math.cos((Math.PI * i) / window);
+    ramp[i] = 0.5 - 0.5 * Math.cos((Math.PI * i) / denom);
   }
   return ramp;
 }

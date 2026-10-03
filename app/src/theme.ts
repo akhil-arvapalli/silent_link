@@ -37,6 +37,13 @@ export const spacing = {
   xl: 32,
 } as const;
 
+/**
+ * Height of the floating back-bar App.tsx renders above every non-home screen.
+ * Screens that are not full-bleed must inset their content by this much or the
+ * bar draws straight over their first row of text.
+ */
+export const TOP_BAR_HEIGHT = 92;
+
 export const type = {
   title: { fontSize: 28, fontWeight: '800' as const, color: colors.ink },
   heading: { fontSize: 20, fontWeight: '700' as const, color: colors.ink },

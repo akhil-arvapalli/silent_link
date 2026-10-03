@@ -8,6 +8,8 @@ venv/
 # Env / secrets
 .env
 .env.local
+# Generated token-signing key when SILENTLINK_SECRET is unset
+backend/.silentlink_secret
 
 # Data / models / artifacts (large binaries)
 data/raw/*
@@ -17,6 +19,10 @@ model/registry/*
 *.tflite
 *.onnx
 *.pt
+# MediaPipe task bundle (7.8 MB per copy) and orphaned ONNX external-data
+# sidecars. export.py deletes the .data files, so anything present predates it.
+*.task
+*.onnx.data
 Logs/
 
 # ML tracking
@@ -42,6 +48,7 @@ app/ios/build/
 .pytest_cache/
 .ruff_cache/
 *.log
+.knownPackages
 
 # Local Android SDK and emulator installations
 emulator/

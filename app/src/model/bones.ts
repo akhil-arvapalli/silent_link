@@ -5,6 +5,8 @@
  * A frame is flat (V*C = 126) with [0:63] = left hand, [63:126] = right hand.
  */
 
+import { C, V } from './normalize';
+
 export const HAND_EDGES: ReadonlyArray<[number, number]> = [
   [0, 1], [1, 2], [2, 3], [3, 4], // thumb
   [0, 5], [5, 6], [6, 7], [7, 8], // index
@@ -12,9 +14,6 @@ export const HAND_EDGES: ReadonlyArray<[number, number]> = [
   [0, 13], [13, 14], [14, 15], [15, 16], // ring
   [0, 17], [17, 18], [18, 19], [19, 20], // pinky
 ];
-
-export const V = 42;
-export const C = 3;
 
 /**
  * Read the (x, y) screen position of joint `j` at frame `t` from a flat

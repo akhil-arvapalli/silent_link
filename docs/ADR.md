@@ -70,5 +70,13 @@ Statuses: `proposed` | `accepted` | `superseded`. Append new ADRs; do not rewrit
 - **Date:** 2026-09-20
 - **Context:** ADR-004 chose concatenative landmark synthesis. The synthesis engine (normalizer, motion library, stitcher) lives in Python for authoring/testing; the renderer must run fully on-device in React Native.
 - **Decision:** Keep the canonical synthesis logic in `model/src/synthesis/` (Python, unit-tested) and **mirror it in TypeScript** under `app/src/synthesis/`. The per-gloss motion library is exported to a bundled JSON asset (`motionLibrary.json`) by `scripts/sync_app_assets.py`; the on-device stitcher produces the same trajectory, rendered by `react-native-skia` (`SkeletonAvatar`).
-- **Consequences:** Deterministic, fully offline Text→Sign; single source of truth remains the Python package + `glosses.json`. Risk: TS/Python drift — mitigated by keeping both mirrors identical and the tests as the spec. Synthetic motion templates stand in until real capture exists.
+- **Consequences:** Deterministic, fully offline Text→Sign; single source of truth remains the Python package + `glosses.json`. Risk: TS/Python drift — mitigated by keeping both mirrors identical and the tests as the spec. Motion templates are **authored**, not captured: `handmodel.py` builds anatomically valid hands by forward kinematics and `choreography.py` drives them through a keyframed performance per gloss. Real signer capture via `scripts/capture_data.py` still replaces these without changing the interface.
+
+## ADR-008 — Motion templates keep wrist translation
+
+- **Status:** accepted
+- **Date:** 2026-10-03
+- **Context:** The classifier's training contract (`data/normalize.py`) makes landmarks wrist-relative and scale-invariant, so a rigid translation of the hand is erased completely (measured: 1.3e-15 residual). Reusing that normalization for the motion library — as the earlier random templates did — silently discarded all wrist movement, which is most of what separates *good morning* from *good night*.
+- **Decision:** The motion library is a **rendering** target, not classifier input, so it normalizes scale but not position. Templates are divided by `handmodel.REST_REACH` (wrist-to-middle-tip of the open hand, a fixed constant), giving a unit where an open hand is exactly 1.0 long. `TextToSignScreen` renders at `scale={100}` inside its 300×280 stage.
+- **Consequences:** Wrist travel is visible and readable. Per-frame scale normalization is deliberately *not* used, so a closed fist renders visibly smaller than an open hand. `test_library_fits_the_render_canvas` pins the extent so authored motion cannot silently outgrow the canvas.
 

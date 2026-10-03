@@ -5,9 +5,10 @@ def test_datasets_listed(authed_client):
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list)
-    # The repo has processed capture data (synthetic), so expect at least one dataset.
-    assert len(data) >= 1
-    assert data[0]["glosses"]
+    assert len(data) == 1
+    assert data[0]["glosses"] == ["hello", "thanks"]
+    assert data[0]["sequence_count"] == 5
+    assert data[0]["frames"] == 40
 
 
 def test_models_register_and_list(authed_client):
@@ -32,8 +33,10 @@ def test_jobs_require_auth(client):
 
 
 def test_synthesis_maps_text_to_glosses(authed_client):
+    """Synthesis is synchronous: the on-device path reads `glosses` straight off
+    this response, so it must be a terminal 200, not a 202 `queued`."""
     r = authed_client.post("/synthesis", json={"text": "good morning"})
-    assert r.status_code == 202
+    assert r.status_code == 200
     body = r.json()
     assert body["status"] == "succeeded"
     assert "good_morning" in body["glosses"]

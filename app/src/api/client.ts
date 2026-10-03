@@ -25,6 +25,23 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * FastAPI reports validation failures as `detail: [ {msg, loc, ...}, ... ]`
+ * while every other error uses a plain string, so both shapes have to be
+ * unwrapped or the UI renders "[object Object]".
+ */
+function describeDetail(body: unknown): string {
+  const detail = (body as { detail?: unknown } | null)?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((d) => (d as { msg?: unknown }).msg)
+      .filter((m): m is string => typeof m === 'string');
+    if (msgs.length > 0) return msgs.join('; ');
+  }
+  return '';
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -41,8 +58,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const detail = (body as { detail?: string }).detail;
-    throw new ApiError(res.status, detail ?? `Request failed (${res.status})`);
+    const message = describeDetail(body);
+    throw new ApiError(res.status, message || `Request failed (${res.status})`);
   }
   return body as T;
 }

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -63,18 +64,23 @@ def _default_runner() -> TrainRunner:
 
 
 class TrainingQueue:
-    """A minimal background worker that executes one job at a time."""
+    """A background worker that runs at most one training job at a time.
+
+    Each job is a `subprocess.run` of the real pipeline, so N concurrent jobs
+    would spawn N CPU/GPU trainers. Jobs beyond the first block on the
+    semaphore and stay honestly `queued` until a slot frees.
+    """
 
     def __init__(self, db: MemoryDB, runner: TrainRunner | None = None) -> None:
         self.db = db
         self.runner = runner or _default_runner()
+        self._slot = threading.Semaphore(1)
 
     def start(self, job: TrainJob) -> None:
-        import threading
-
         def work() -> None:
-            self.db.jobs[job.id].status = "running"
+            self._slot.acquire()
             try:
+                self.db.jobs[job.id].status = "running"
                 result = self.runner(job)
                 record = self.db.jobs[job.id]
                 record.status = "succeeded"
@@ -83,5 +89,7 @@ class TrainingQueue:
                 record = self.db.jobs[job.id]
                 record.status = "failed"
                 record.error = str(exc)
+            finally:
+                self._slot.release()
 
         threading.Thread(target=work, daemon=True).start()
